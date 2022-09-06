@@ -22,12 +22,16 @@ reserved = {
     'of' : 'OF',
     'not' : 'NOT',
     'true' : 'TRUE',
+    'io' : 'IO',
+    'sbject' : 'OBJECT',
+    'snt' : 'INT',
+    'string' : 'STRING',
 }
 
 tokens = [
     'ID',
     'NUM',
-    'STR',
+    'STRING',
     'MINUS',
     'PLUS',
     'MPLY',
@@ -55,7 +59,7 @@ t_LESSEQ = r'\<\='
 t_EQUALS = r'\='
 t_ATTR = r'\<\-'
 t_DOT = r'\.'
-# t_COMMA =r'\,'
+t_COMMA =r'\,'
 t_DOUBLEDOT = r'\:'
 t_COMMADOT = r'\;'
 t_OPENPTH = r'\('
@@ -78,11 +82,11 @@ def t_CF (token):
     token.lexer.lineno
 
 def t_STRING (token):
-    r'[\']|[\"][a-zA-Z_0-9]*[\'|\"]'
+    r'\"[^"]*\"'
     return token
 
 def t_COMMENT (token):
-    r'\"[a-zA-Z_0-9_\W]*\"'
+    r'[\*[[.|\n]?]\*]|[\-\-.]'
     token.type = 'COMMENT'
     return token
 
