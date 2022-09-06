@@ -1,5 +1,6 @@
 import sys, os
 import ply.lex as lex
+from src.file_handler import handler
 
 
 reserved = {
@@ -24,8 +25,6 @@ reserved = {
     'true' : 'TRUE',
     'io' : 'IO',
     'sbject' : 'OBJECT',
-    'snt' : 'INT',
-    'string' : 'STRING',
 }
 
 tokens = [
@@ -86,32 +85,35 @@ def t_STRING (token):
     return token
 
 def t_COMMENT (token):
-    r'[\*[[.|\n]?]\*]|[\-\-.]'
+    r'(\(\*[^\)\*]*\*\)) | \-\-[a-zA-Z_0-9_\W]*\-\-'
     token.type = 'COMMENT'
     return token
 
 def t_error (token):
-    print (f'Caractere ilegal {token.value[0]}')
+    tk = token.value[0]
+    print (f'Caractere ilegal: ' + str(token))
     token.lexer.skip(1)
 
-    
 
-tokens_list = []
-#import pdb; pdb.set_trace()
-for file_in_name in range(1, len(sys.argv)):
-    
-# leitura do arquivo para a memoria
-    file_name = str(sys.argv[file_in_name]).split('.txt')
-    working_file =  file_name[0] + '_Output' + '.wrk'
-    output_file = open(working_file, 'w')
-    with open(str(sys.argv[file_in_name]), 'r') as source:
-        source_text = source.read()
-        lexical = lex.lex()
-        lexical.input(source_text)
-        while True:
-            tkn = lexical.token()
-            if not tkn:
-                break
-            tokens_list.append(tkn)
-        for element in tokens_list:
-            print (element)
+def execute (source):
+    tokens_list = []
+    tokens_warn = []
+    lexical = lex.lex()
+    lexical.input(source)
+    while True:
+        tkn = lexical.token()
+        if not tkn:
+            break
+        tokens_list.append(tkn)
+    return tokens_list
+
+
+if __name__ == "__main__":
+    final_tokens = []
+    for file_in_name in range(1, len(sys.argv)):
+        file_name = str(sys.argv[file_in_name]).split('.txt')
+        source, output_file = handler(file_name)
+        final_tokens = execute(source)
+        for i in final_tokens:
+            output_file.write(str(i)+'\n')
+        output_file.close()
