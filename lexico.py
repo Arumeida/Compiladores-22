@@ -47,6 +47,8 @@ tokens = [
     'CLOSEPTH',
     'OPENKEYS',
     'CLOSEKEYS',
+    'ATT',
+    'CASEAT',
 ] + list(reserved.values())
 
 t_PLUS = r'\+'
@@ -65,6 +67,8 @@ t_OPENPTH = r'\('
 t_CLOSEPTH = r'\)'
 t_OPENKEYS = r'\{'
 t_CLOSEKEYS = r'\}'
+t_ATT = r'\@'
+t_CASEAT = r'\=\>'
 t_ignore = ' \t'
 
 def t_ID (token):
@@ -78,7 +82,7 @@ def t_NUM (token):
 
 def t_CF (token):
     r'\n+'
-    token.lexer.lineno
+    token.lexer.lineno += 1
 
 def t_STRING (token):
     r'\"[^"]*\"'
