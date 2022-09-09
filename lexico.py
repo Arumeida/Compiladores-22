@@ -111,7 +111,7 @@ def execute (source):
 if __name__ == "__main__":
     final_tokens = []
     for file_in_name in range(1, len(sys.argv)):
-        file_name = str(sys.argv[file_in_name]).split('.txt')
+        file_name = str(sys.argv[file_in_name]).split('.cl')
         source, output_file = handler(file_name)
         final_tokens = execute(source)
         for i in final_tokens:
