@@ -85,7 +85,7 @@ def t_STRING (token):
     return token
 
 def t_COMMENT (token):
-    r'(\(\*[^\)\*]*\*\)) | \-\-[a-zA-Z_0-9_\W]*\-\-'
+    r'(\(\*[^\)\*]*\*\)) | \-\-.*'
     token.type = 'COMMENT'
     return token
 
