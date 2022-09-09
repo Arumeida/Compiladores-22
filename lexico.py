@@ -24,7 +24,7 @@ reserved = {
     'not' : 'NOT',
     'true' : 'TRUE',
     'io' : 'IO',
-    'sbject' : 'OBJECT',
+    'object' : 'OBJECT',
 }
 
 tokens = [
