@@ -49,6 +49,7 @@ tokens = [
     'CLOSEKEYS',
     'ATT',
     'CASEAT',
+    'TILDE',
 ] + list(reserved.values())
 
 t_PLUS = r'\+'
@@ -69,6 +70,7 @@ t_OPENKEYS = r'\{'
 t_CLOSEKEYS = r'\}'
 t_ATT = r'\@'
 t_CASEAT = r'\=\>'
+t_TILDE = r'\~'
 t_ignore = ' \t'
 
 def t_ID (token):
