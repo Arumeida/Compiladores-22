@@ -24,7 +24,7 @@ reserved = {
     'not' : 'NOT',
     'true' : 'TRUE',
     'io' : 'IO',
-    'sbject' : 'OBJECT',
+    'object' : 'OBJECT',
 }
 
 tokens = [
@@ -47,6 +47,9 @@ tokens = [
     'CLOSEPTH',
     'OPENKEYS',
     'CLOSEKEYS',
+    'ATT',
+    'CASEAT',
+    'TILDE',
 ] + list(reserved.values())
 
 t_PLUS = r'\+'
@@ -65,6 +68,9 @@ t_OPENPTH = r'\('
 t_CLOSEPTH = r'\)'
 t_OPENKEYS = r'\{'
 t_CLOSEKEYS = r'\}'
+t_ATT = r'\@'
+t_CASEAT = r'\=\>'
+t_TILDE = r'\~'
 t_ignore = ' \t'
 
 def t_ID (token):
@@ -78,14 +84,14 @@ def t_NUM (token):
 
 def t_CF (token):
     r'\n+'
-    token.lexer.lineno
+    token.lexer.lineno += 1
 
 def t_STRING (token):
     r'\"[^"]*\"'
     return token
 
 def t_COMMENT (token):
-    r'(\(\*[^\)\*]*\*\)) | \-\-[a-zA-Z_0-9_\W]*\-\-'
+    r'(\(\*[^\)\*]*\*\)) | \-\-.*'
     token.type = 'COMMENT'
     return token
 
@@ -111,7 +117,7 @@ def execute (source):
 if __name__ == "__main__":
     final_tokens = []
     for file_in_name in range(1, len(sys.argv)):
-        file_name = str(sys.argv[file_in_name]).split('.txt')
+        file_name = str(sys.argv[file_in_name]).split('.cl')
         source, output_file = handler(file_name)
         final_tokens = execute(source)
         for i in final_tokens:
