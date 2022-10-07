@@ -2,7 +2,8 @@
 #!/usr/bin/python
 import ply.yacc as yacc
 import os, sys
-from lexico import tokens
+from lexico import tokens, lexer
+from src.file_handler import handler
 
 VERBOSE = 2
 
@@ -29,49 +30,27 @@ def p_class_definition_1(p):
     | empty'''
     pass
 
-# def p_class_definition_2(p):
-#     'class_definition : CLASS ID INHERITS ID feature_list'
-#     pass
-
 def p_feature_list(p):
     '''feature_list : feature_list feature COMMADOT
     | empty'''
     pass
 
-def p_feature_1(p):
-    'feature : ID OPENPTH formal_list CLOSEPTH DOUBLEDOT ID OPENKEYS expression CLOSEKEYS'
-    pass
-
-def p_feature_2(p):
-    '''feature : ID DOUBLEDOT ID
+def p_feature(p):
+    '''feature : ID OPENPTH formal_list CLOSEPTH DOUBLEDOT ID OPENKEYS expression CLOSEKEYS
+    | ID DOUBLEDOT ID
     | ID DOUBLEDOT ID ATTR expression
     | empty'''
     pass
 
 def p_formal_list(p):
     '''formal_list : formal_list COMMA formal
-    | empty
-    | formal'''
+    | formal
+    | empty'''
     pass
 
 def p_formal(p):
     'formal : ID DOUBLEDOT ID'
     pass
-
-# def p_local_declarations_1(p):
-#     'local_declarations : local_declarations var_declaration'
-#     pass
-
-# def p_local_declarations_2(p):
-#     'local_declarations : empty'
-#     pass
-
-# def p_declaration(p):
-#     '''declaration : var_declaration
-#     | fun_declaration
-#     | HASH INCLUDE LESS ID GREATER
-#     | USING NAMESPACE STD SEMICOLON'''
-#     pass
 
 def p_expression_list(p):
     '''expression_list : expression_list expression COMMADOT
@@ -89,21 +68,41 @@ def p_expression_let(p):
     | ID DOUBLEDOT ID ATTR expression
     | LET expression LET expression
     | empty'''
+    pass
+
+def p_expression_list_case(p):
+    '''expression_list_case : expression_list_case expression_case COMMADOT
+    | expression_case COMMADOT
+    | empty'''
+    pass
+
+def p_expression_case(p):
+    '''expression_case : ID DOUBLEDOT ID CASEAT expression
+    | empty'''
+    pass
 
 
 def p_expression_1(p):
     '''expression : ID ATTR expression
+    | expression DOT ID OPENPTH CLOSEPTH
+    | expression DOT ID OPENPTH expression_list CLOSEPTH
+    | expression ATT ID DOT ID OPENPTH CLOSEPTH
+    | expression ATT ID DOT ID OPENPTH expression_list CLOSEPTH
+    | ID OPENPTH CLOSEPTH
+    | ID OPENPTH expression_list CLOSEPTH
     | IF expression THEN expression ELSE expression FI
     | WHILE expression LOOP expression POOL
-    | OPENKEYS expression_list expression CLOSEKEYS
-    | CASE expression OF expression_list_case IN expression ESAC
-    | NEW ID COMMADOT
-    | ISVOID expression COMMADOT
-    | expression PLUS expression COMMADOT
-    | expression MINUS expression COMMADOT
-    | expression MPLY expression COMMADOT
-    | expression DIV expression COMMADOT
-    | expression EQUALS expression COMMADOT
+    | OPENKEYS expression_list CLOSEKEYS
+    | LET ID DOUBLEDOT ID expression_let_list IN expression
+    | LET ID DOUBLEDOT ID ATT expression_let_list IN expression
+    | CASE expression OF expression_list_case ESAC
+    | NEW ID
+    | ISVOID expression
+    | expression PLUS expression
+    | expression MINUS expression
+    | expression MPLY expression
+    | expression DIV expression
+    | expression EQUALS expression
     | NOT expression
     | TILDE expression COMMADOT
     | expression LESSTHEN expression COMMADOT
@@ -115,23 +114,6 @@ def p_expression_1(p):
     | FALSE'''
     pass
 
-def p_expression_2(p):
-    '''expression : ID OPENPTH CLOSEPTH
-    | ID OPENPTH expression_list CLOSEPTH'''
-    pass
-
-def p_expression_3(p):
-    '''expression : LET ID DOUBLEDOT ID
-    | LET ID DOUBLEDOT ID ATT expression_let_list IN expression'''
-
-def p_expression_4(p):
-    '''expression : expression DOT ID OPENPTH CLOSEPTH
-    | expression ID DOT ID OPENPTH CLOSEPTH
-    | expression ID DOT ID OPENPTH expression_list CLOSEPTH
-    | expression DOT ID OPENPTH expression_list CLOSEPTH'''
-    pass
-
-
 def p_empty(p):
     'empty :'
     pass
@@ -141,33 +123,22 @@ def p_error(p):
     #print str(dir(c_lexer))
     if VERBOSE:
         if p is not None:
-            print ("Error en Sintaxis linea:" + str(p.lex.lineno)+"  Error de Contexto " + str(p.value))
+            print ("Error en Sintaxis linea:" + str(p.lexer.lineno)+"  Error de Contexto " + str(p.value))
         else:
-            print ("Error en Lexico linea: " + str(lexico.lex.lineno))
+            print ("Error en Lexico linea: " + str(lexico.lexer.lineno))
     else:
         raise Exception('Syntax', 'error')
     
 parser = yacc.yacc()
 
-if __name__ == '__main__':
-
-    if (len(sys.argv) > 1):
-        fin = sys.argv[1]
-    else:
-        fin = 'fuente/c.c'
-
-    f = open(fin,'r')
-    data = f.read()
-    #"print (data)
-    #parser.parse(data, tracking=True)
-    sintax(fin)
 
 if __name__ == "__main__":
     final_tokens = []
     for file_in_name in range(1, len(sys.argv)):
         file_name = str(sys.argv[file_in_name]).split('.cl')
         source, output_file = handler(file_name)
-        syntatic = sintax(source)
-        for i in final_tokens:
-            output_file.write(str(i)+'\n')
+        # print (source)
+        result = parser.parse(source, lexer=lexer)
+        if result:
+            output_file.write(str(result))
         output_file.close()
