@@ -1,5 +1,3 @@
-# -*- enconding: utf-8 -*-
-#!/usr/bin/python
 import ply.yacc as yacc
 import os, sys
 from lexico import tokens, lexer
@@ -16,7 +14,6 @@ def p_class_list(p):
     '''class_list : class_list  class
     | class
     | empty'''
-    #p[0] = p[1] + p[2]
     pass
 
 def p_class(p):
@@ -119,13 +116,11 @@ def p_empty(p):
     pass
 
 def p_error(p):
-    #print str(dir(p))
-    #print str(dir(c_lexer))
     if VERBOSE:
         if p is not None:
-            print ("Error en Sintaxis linea:" + str(p.lexer.lineno)+"  Error de Contexto " + str(p.value))
+            print ("Erro de sintaxe na linha:" + str(p.lexer.lineno)+"  erro de Contexto " + str(p.value))
         else:
-            print ("Error en Lexico linea: " + str(lexico.lexer.lineno))
+            print ("Erro no lexico na linha: " + str(lexico.lexer.lineno))
     else:
         raise Exception('Syntax', 'error')
     
@@ -137,7 +132,6 @@ if __name__ == "__main__":
     for file_in_name in range(1, len(sys.argv)):
         file_name = str(sys.argv[file_in_name]).split('.cl')
         source, output_file = handler(file_name)
-        # print (source)
         result = parser.parse(source, lexer=lexer)
         if result:
             output_file.write(str(result))
