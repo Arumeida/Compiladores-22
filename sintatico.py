@@ -3,112 +3,234 @@ import os, sys
 from lexico import tokens, lexer
 from src.file_handler import handler
 
-VERBOSE = 2
-
+VERBOSE = 1
 
 def p_program(p):
     'program : class_list'
+    p[0]=[p[1]]
     pass
 
 def p_class_list(p):
-    '''class_list : class_list  class
-    | class
-    | empty'''
+    '''class_list : class_list  class COMMADOT
+    | class COMMADOT '''
+
+    if len(p) == 3:
+        p[0] = [p[1]]
+    else: 
+        p[0] = p[1]
+        p[0].append(p[2])
     pass
 
 def p_class(p):
-    '''class : class_definition
-    | empty'''
-    pass
-
-def p_class_definition_1(p):
-    '''class_definition : CLASS ID feature_list
-    | CLASS ID INHERITS ID feature_list
-    | empty'''
+    '''class : CLASS ID OPENKEYS feature_list CLOSEKEYS
+    | CLASS ID INHERITS ID OPENKEYS feature_list CLOSEKEYS'''
+    if len(p) == 6:
+        p[0] = ('class', p[2], p[4])
+    else:
+        p[0] = ('classInherits', p[2], p[4], p[6])
     pass
 
 def p_feature_list(p):
-    '''feature_list : feature_list feature COMMADOT
+    '''feature_list : feature_list feature
     | empty'''
+
+    if len(p) == 2:
+	    p[0] = None
+    else:
+        p[0] = [p[1]]
+        p[0].append(p[2])
     pass
 
-def p_feature(p):
-    '''feature : ID OPENPTH formal_list CLOSEPTH DOUBLEDOT ID OPENKEYS expression CLOSEKEYS
-    | ID DOUBLEDOT ID
-    | ID DOUBLEDOT ID ATTR expression
-    | empty'''
+def p_feature_a(p):
+    'feature : ID OPENPTH formal_list CLOSEPTH DOUBLEDOT ID OPENKEYS expr CLOSEKEYS COMMADOT'
+    p[0]= ('featureparameter',p[1],p[3],p[6],p[8])
     pass
+
+
+def p_feature_b(p):
+    '''feature : ID DOUBLEDOT ID COMMADOT
+    | ID DOUBLEDOT ID ATTR expr COMMADOT
+    | empty'''
+    if len(p) == 5:
+        p[0] = ('featureDeclaration', p[1],p[3])
+    elif len(p) == 7:
+        p[0] = ('featureAnonymous', p[1], p[3], p[5])
+    else:
+        p[0] = None
+    pass
+
 
 def p_formal_list(p):
     '''formal_list : formal_list COMMA formal
-    | formal
-    | empty'''
+    | empty
+    | formal'''
+    if len(p) == 4:
+        p[0]=p[1]
+        p[0].append(p[3])
+    elif len(p) == 2:
+        p[0] = [p[1]]
+    else:
+        p[0] = None
     pass
 
 def p_formal(p):
     'formal : ID DOUBLEDOT ID'
-    pass
-
-def p_expression_list(p):
-    '''expression_list : expression_list expression COMMADOT
-    | expression COMMADOT
-    | empty'''
-    pass
-
-def p_expression_let_list(p):
-    '''expression_let_list : expression_let_list expression_let COMMADOT
-    | expression_let COMMADOT'''
-    pass
-
-def p_expression_let(p):
-    '''expression_let : ID DOUBLEDOT ID
-    | ID DOUBLEDOT ID ATTR expression
-    | LET expression LET expression
-    | empty'''
-    pass
-
-def p_expression_list_case(p):
-    '''expression_list_case : expression_list_case expression_case COMMADOT
-    | expression_case COMMADOT
-    | empty'''
-    pass
-
-def p_expression_case(p):
-    '''expression_case : ID DOUBLEDOT ID CASEAT expression
-    | empty'''
+    p[0]=('formal', p[1],p[3])
     pass
 
 
-def p_expression_1(p):
-    '''expression : ID ATTR expression
-    | expression DOT ID OPENPTH CLOSEPTH
-    | expression DOT ID OPENPTH expression_list CLOSEPTH
-    | expression ATT ID DOT ID OPENPTH CLOSEPTH
-    | expression ATT ID DOT ID OPENPTH expression_list CLOSEPTH
-    | ID OPENPTH CLOSEPTH
-    | ID OPENPTH expression_list CLOSEPTH
-    | IF expression THEN expression ELSE expression FI
-    | WHILE expression LOOP expression POOL
-    | OPENKEYS expression_list CLOSEKEYS
-    | LET ID DOUBLEDOT ID expression_let_list IN expression
-    | LET ID DOUBLEDOT ID ATT expression_let_list IN expression
-    | CASE expression OF expression_list_case ESAC
-    | NEW ID
-    | ISVOID expression
-    | expression PLUS expression
-    | expression MINUS expression
-    | expression MPLY expression
-    | expression DIV expression
-    | expression EQUALS expression
-    | NOT expression
-    | TILDE expression COMMADOT
-    | expression LESSTHEN expression COMMADOT
-    | expression LESSEQUALS COMMADOT
-    | OPENPTH expression CLOSEPTH
-    | ID
-    | STRING
-    | TRUE
-    | FALSE'''
+
+
+
+
+
+def p_expr_Value(p):
+    '''expr : ISVOID expr
+     | TILDE expr
+     | NOT expr
+     | NEW ID
+     | ID
+     | NUM
+     | STRING
+     | TRUE
+     | FALSE'''
+    if len(p) == 2:
+        p[0] = ('expValue',p[1])
+    elif len(p) == 3:
+        p[0] = ('expModifier', p[1], p[2])
+    pass
+
+def p_expr_comparator(p):
+    '''expr : expr LESSTHEN expr
+     | expr LESSEQUALS expr
+     | expr EQUALS expr'''
+    p[0] = ('exprComparator',p[2], p[1], p[3])
+    pass
+
+def p_expr_operator(p):
+    '''expr : expr PLUS expr
+     | expr MINUS expr 
+     | expr MPLY expr
+     | expr DIV expr'''
+    p[0] = ('exprOperator',p[2], p[1], p[3])
+    pass
+
+def p_expr_atrib(p):
+    'expr : ID ATTR expr'
+    p[0] = ('exprAttr', p[1], p[2], p[3])
+    pass
+
+def p_expr_pth(p):
+    'expr : OPENPTH expr CLOSEPTH'
+    p[0] = ('exprPth', p[2])
+    pass
+
+def p_expr_extends_att(p):
+    '''expr : expr ATT ID DOT ID OPENPTH expr_list CLOSEPTH
+     | expr DOT ID OPENPTH expr_list CLOSEPTH'''
+
+    if len(p) == 7:
+        p[0] = ('expr', p[1],p[3],p[5])
+    else:
+        p[0] = ('exprAtt',p[1], p[3], p[5], p[7])
+    pass
+
+def p_expr_id(p):
+    'expr : ID OPENPTH expr_list CLOSEPTH'
+    p[0] = ('exprMethodFunction', p[1], p[3])
+    pass
+
+def p_expr_if(p):
+    'expr : IF expr THEN expr ELSE expr FI'
+    p[0] = ('exprIf', p[2], p[4], p[6])
+    pass
+
+def p_expr_while(p):
+    'expr : WHILE expr LOOP expr POOL'
+    p[0] = ('exprWhile', p[2], p[4])
+    pass
+
+def p_expr_lista(p):
+    'expr : OPENKEYS exprlista CLOSEKEYS'
+    p[0] = ('expr_Lista',p[2])
+    pass
+
+def p_expr_let(p):
+    '''expr : LET ID DOUBLEDOT ID exprlistlet IN expr
+     | LET ID DOUBLEDOT ID ATTR expr exprlistlet IN expr'''
+
+    if len(p) == 8:
+        p[0] = ('exprLet', p[2], p[4], p[5], p[7])
+    else:
+        p[0] = ('exprLet2', p[2], p[4], p[6], p[7], p[9])
+    pass
+
+def p_expr_case(p):
+    'expr : CASE expr OF exprlistcase ESAC'
+    p[0] = ('exprCase', p[2], p[4])
+    pass
+
+def p_exprlista(p):
+    '''exprlista : exprlista expr COMMADOT
+     | expr COMMADOT'''
+    if len(p) == 3:
+        p[0] = [p[1]]
+    else:
+        p[0] = p[1]
+        p[0].append(p[2])
+    pass
+
+def p_expr_list(p):
+    '''expr_list : expr_list COMMA expr
+     | expr
+     | empty'''
+    
+    if len(p) == 4:
+        p[0] = p[1]
+        p[0].append(p[3])
+    elif len(p) == 2:
+        p[0] = [p[1]]
+    else:
+        p[0] = None
+    pass
+
+def p_exprlistlet(p):
+    '''exprlistlet : exprlistlet letexpr  
+     | letexpr'''
+    if len(p) == 3:
+        p[0] = p[1]
+        p[0].append(p[2])
+    else:
+        p[0] = [p[1]]
+    pass
+
+def p_letexpr(p):
+    '''letexpr : COMMA ID DOUBLEDOT ID 
+     | COMMA ID DOUBLEDOT ID ATTR expr
+     | empty'''
+    
+    if len(p) == 5:
+        p[0] = ('exprType', p[2], p[4])
+    elif len(p) == 7:
+        p[0] = ('exprType2', p[2], p[4],p[6])
+    else:
+        p[0] = None
+    pass
+
+
+def p_exprlistcase(p):
+    '''exprlistcase : exprlistcase exprcase
+     | exprcase'''
+    if len(p) == 3:
+        p[0] = p[1]
+        p[0].append(p[2])
+    else:
+        p[0] = [p[1]]
+    pass 
+
+def p_exprcase(p):
+    'exprcase : ID DOUBLEDOT ID CASEAT expr COMMADOT'
+    p[0] = ('exprCase', p[1], p[3], p[5])
     pass
 
 def p_empty(p):
@@ -123,6 +245,7 @@ def p_error(p):
             print ("Erro no lexico na linha: " + str(lexico.lexer.lineno))
     else:
         raise Exception('Syntax', 'error')
+
     
 parser = yacc.yacc()
 
@@ -134,5 +257,6 @@ if __name__ == "__main__":
         source, output_file = handler(file_name)
         result = parser.parse(source, lexer=lexer)
         if result:
+            print (result)
             output_file.write(str(result))
         output_file.close()
