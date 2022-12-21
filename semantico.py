@@ -1,4 +1,4 @@
-from Sintatico import arvore
+from sintatico import tree
 import copy
 
 #lista de tipos (<nome>, <pai>, <metodos>, <atributos>)
@@ -17,16 +17,16 @@ for Type in TypeList:
     for method in Type[2]:
         MethodsList.append(method)
 
+
 for Type in TypeList:
     for ID in Type[3]:
         IDsList.append(ID)
 
 
-
-def percorreArvore( token ):
+def percorretree( token ):
     if type(token) == list or type(token) == tuple:
-        for son in token:
-            percorreArvore(son)
+        for child in token:
+            percorretree(child)
         print(token[0])
 
 
@@ -49,34 +49,32 @@ def chamaFuncao( token, IDsList, MethodsList, TypeList ):
     elif isNewScopeMethod(token[0]) or isNewScopeLet(token[0]):
         newIDsList = copy.deepcopy(IDsList)
         newMethodsList = MethodsList
-
-
     else:
         newTypeList = TypeList
         newIDsList = IDsList
         newMethodsList = MethodsList
 
     if token[0] == 'idType':
-        manipulaIdType(token, IDsList, newTypeList)
+        get_IdType(token, IDsList, newTypeList)
     elif token[0] == 'expID':
-        manipulaExprId(token, newIDsList)
+        get_ExprId(token, newIDsList)
     elif token[0] == 'expType':
-        manipulaExprLetSeta(token, newIDsList, newTypeList)
+        get_ExprLetSeta(token, newIDsList, newTypeList)
         chamaFuncao(token[5], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'expLet':
-        manipulaExprLet(token, newIDsList, newTypeList)
+        get_ExprLet(token, newIDsList, newTypeList)
         chamaFuncao(token[4], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'expBetweenKeys':
         chamaFuncao(token[1], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'expWhile':
-        manipulaExprWhile(token, newIDsList)
+        get_ExprWhile(token, newIDsList)
         chamaFuncao(token[3], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'expIf':
-        manipulaExprIf(token, newIDsList)
+        get_ExprIf(token, newIDsList)
         chamaFuncao(token[2], newIDsList, newMethodsList, newTypeList)
         chamaFuncao(token[3], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'exprCallMethod':
-        manipulaExprCallMethod(token, newMethodsList, newIDsList)
+        get_ExprCallMethod(token, newMethodsList, newIDsList)
     elif token[0] == 'expATT':
         nome = None
         methodName = None
@@ -88,6 +86,7 @@ def chamaFuncao( token, IDsList, MethodsList, TypeList ):
             methodName = t[2][1]
             if aux != None:
                 nome = aux[1]
+
         if nome != None:
             tipo = getType(nome, newTypeList)
             if nome == 'SELF_TYPE':
@@ -106,6 +105,7 @@ def chamaFuncao( token, IDsList, MethodsList, TypeList ):
             methodName = token[2][1]
             if aux != None:
                 nome = aux[1]
+
         if nome != None:
             tipo = getType(nome, newTypeList)
             if nome == 'SELF_TYPE':
@@ -116,37 +116,37 @@ def chamaFuncao( token, IDsList, MethodsList, TypeList ):
     elif token[0] == 'exprEntreParenteses':
         chamarFun(t[1], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'expAtrib':
-        manipulaExprSeta(token, newIDsList)
+        get_ExprSeta(token, newIDsList)
     elif token[0] == 'operator':
-        manipulaOp(token, newIDsList)
+        get_Op(token, newIDsList)
     elif token[0] == 'comparation':
-        manipulaComp(token, newIDsList)
+        get_Comp(token, newIDsList)
     elif token[0] == 'expNew':
-        manipulaExprNew(token, newIDsList)
+        get_ExprNew(token, newIDsList)
     elif token[0] == 'expValue':
-        manipulaExprVoid(token, newIDsList)
+        get_ExprVoid(token, newIDsList)
     elif token[0] == 'expNot':
-        manipulaExprNot(token, newIDsList)
+        get_ExprNot(token, newIDsList)
     elif token[0] == 'formal':
-        manipulaFormal(token, newIDsList, newTypeList)
+        get_Formal(token, newIDsList, newTypeList)
     elif token[0] == 'featureReturnParametro':
-        manipulaFeatureRetornoParametro(token, newIDsList, newMethodsList, newTypeList)
+        get_FeatureRetornoParametro(token, newIDsList, newMethodsList, newTypeList)
         for formal in token[4]:
             chamarFun(formal, newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'featureReturn':
-        manipulaFeatureRetorno(token, newMethodsList, newTypeList)
+        get_FeatureRetorno(token, newMethodsList, newTypeList)
         chamarFun(token[3], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'featureAnonimus':
-        manipulafeatureAnonima(token, newIDsList, newTypeList)
+        get_featureAnonima(token, newIDsList, newTypeList)
         for formal in token[2]:
             chamaFuncao(formal, newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'featureDeclaration':
-        manipulaFeatureDeclaration(token, newIDsList, newTypeList)
+        get_FeatureDeclaration(token, newIDsList, newTypeList)
     elif token[0] == 'class':
         for formal in token[2]:
             chamarFun(formal, newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'classInherits':
-        manipulaClasseInh(token, newTyList)
+        get_ClasseInh(token, newTyList)
         for formal in token[3]:
             if type(formal) == list:
                 for i in formal:
@@ -159,77 +159,72 @@ def chamaFuncao( token, IDsList, MethodsList, TypeList ):
                 chamaFuncao(i, newIDsList, newMethodsList, newTypeList)
 
 
-
-def manipulaIdType( token, IDsList, TypeList ):
+def get_IdType( token, IDsList, TypeList ):
     if len(token) == 4:
         aux = ('featureAnonima', token[1], token[2], token[3])
-        manipulafeatureAnonima(aux, IDsList, TypeList)
+        get_featureAnonima(aux, IDsList, TypeList)
     elif len(token) == 3:
         aux = ('featureDeclaration', token[1], token[2])
-        manipulaFeatureDeclaration(aux, IDsList, TypeList)
+        get_FeatureDeclaration(aux, IDsList, TypeList)
     pass
 
 
-def manipulaExprId( token, IDsList ):
+def get_ExprId( token, IDsList ):
     if not isInListId(token[1], IDsList):
         print("Erro de declaração: %s não foi declarado" % token[1])
 
 
-def manipulaExprLetAtrib( token, IDsList, TypeList ):
+def get_ExprLetAtrib( token, IDsList, TypeList ):
     aux = ('featureAnonima', token[1], token[2])
-    manipulafeatureAnonima(aux, IDsList, TypeList)
+    get_featureAnonima(aux, IDsList, TypeList)
     for fanonima in token[3]:
         if fanonima != None:
-            manipulaIdType(fanonima, IDsList, TypeList)
+            get_IdType(fanonima, IDsList, TypeList)
 
 
-
-
-
-def manipulaExprLet( token, IDsList, TypeList ):
+def get_ExprLet( token, IDsList, TypeList ):
     aux = ('featureDeclaration', token[1], token[2])
-    manipulaFeatureDeclaration(aux, IDsList, TypeList)
+    get_FeatureDeclaration(aux, IDsList, TypeList)
     for fanonima in token[3]:
         if fanonima != None:
-            manipulaIdType(fanonima, IDsList, TypeList)
+            get_IdType(fanonima, IDsList, TypeList)
 
 
-def manipulaExprWhile( token, IDsList ):
+def get_ExprWhile( token, IDsList ):
     if token[1][0] == 'comparation':
-        manipulaComparation(token[1], IDsList)
+        get_Comparation(token[1], IDsList)
         return
     if token[1][0] == 'expNot':
-        manipulaExprNot(token[1], IDsList)
+        get_ExprNot(token[1], IDsList)
         return
     print('Erro de declaração: expressão {token[1]} não é booleano')
 
 
-
-def manipulaExprIf( token, IDsList ):
+def get_ExprIf( token, IDsList ):
     if token[1][0] == 'comparation':
-        manipulaComparation(token[1], IDsList)
+        get_Comparation(token[1], IDsList)
         return
     if token[1][0] == 'expNot':
-        manipulaExprNottoken[1], IDsList)
+        get_ExprNottoken([1], IDsList)
         return
     print("Erro de declaração: expressão %s não é booleano" % token[1])
 
 
-def manipulaExprCallMethod( token, MethodsList, IDsList ):
+def get_ExprCallMethod( token, MethodsList, IDsList ):
     if not isInListMetodo(token[1], MethodsList):
         print("Erro de chamada: metodo %s não declarado" % token[1])
     verificaParametroCall(token[2], getMetodo(token[1], MethodsList), IDsList)
 
 
-def manipulaExprBetweenParenthesis( token ):
+def get_ExprBetweenParenthesis( token ):
     pass
 
 
-def manipulaExprAtrib( token, IDsList ):
+def get_ExprAtrib( token, IDsList ):
     if getId(token[1], IDsList) == None:
         print("Erro de atribuição: %s não foi declarada" % token[1])
     elif token[3][0] == 'operation':
-        manipulaOperation(token[3], IDsList)
+        get_Operation(token[3], IDsList)
     elif token[3][0] == 'expID':
         id = getId(token[3][1], IDsList)
         if id == None:
@@ -237,7 +232,7 @@ def manipulaExprAtrib( token, IDsList ):
     return token[1]
 
 
-def manipulaOperation( token, IDsList ):
+def get_Operation( token, IDsList ):
     id1 = getId(token[2], IDsList)
     id2 = getId(token[3], IDsList)
 
@@ -251,18 +246,18 @@ def manipulaOperation( token, IDsList ):
         print("Erro de operação: %s deve ser do tipo Int" % id2[0])
 
 
-def manipulaComparation( token, IDsList ):
+def get_Comparation( token, IDsList ):
     if token[2][0] == 'expNot':
         id1 = getId(token[2][2][1], IDsList)
     elif token[2][0] == 'operation':
-        manipulaOp(token[2], IDsList)
+        get_Op(token[2], IDsList)
         id1 = (0, 'Int')
     else:
         id1 = getId(token[2][1], IDsList)
     if t[3][0] == 'expNot':
         id2 = getId(token[3][2][1], IDsList)
     elif token[3][0] == 'opration':
-        manipulaOp(token[3], IDsList)
+        get_Op(token[3], IDsList)
         id2 = (0, 'Int')
     else:
         id2 = getId(t[3][1], IDsList)
@@ -279,30 +274,24 @@ def manipulaComparation( token, IDsList ):
         print("Erro de comparação: %s %s devem ser do mesmo tipo" % id1[0], id2[0])
 
 
-
-def manipulaExprNew( token, TypeList ):
+def get_ExprNew( token, TypeList ):
     if not isInListType(token[2], TypeList):
         print("Erro de declaração: tipo %s não foi declarado" % token[2])
 
 
-
-
-def manipulaExprValue( token, IDsList ):
+def get_ExprValue( token, IDsList ):
     if not isInListId(token[2], IDsList):
         print("Erro de declaração: %s não foi declarado" % token[2])
 
 
-def manipulaExprNot( token, IDsList ):
+def get_ExprNot( token, IDsList ):
     if token[2][0] == 'comparation':
-        manipulaComparation(token[2], IDsList)
+        get_Comparation(token[2], IDsList)
         return
     print("Erro de declaração: expressão %s não é booleano" % token[2])
 
 
-
-
-
-def manipulaFormal( token, IDsList, TypeList ):
+def get_Formal( token, IDsList, TypeList ):
     if isInListId(token[1], IDsList):
         print("Erro de declaração: %s já declarado" % token[1])
     if not isInListType(token[2], TypeList):
@@ -310,7 +299,7 @@ def manipulaFormal( token, IDsList, TypeList ):
     IDsList.append((token[1], token[2]))
 
 
-def manipulaFeatureRetornoParametro( token, IDsList, MethodsList, TypeList ):
+def get_FeatureRetornoParametro( token, IDsList, MethodsList, TypeList ):
     if isInListMetodo(token[1], MethodsList):
         print("Erro de declaração: method %s já declarado" % token[1])
     if not isInListType(token[3], TypeList):
@@ -327,7 +316,7 @@ def manipulaFeatureRetornoParametro( token, IDsList, MethodsList, TypeList ):
     MethodsList.append(method)
 
 
-def manipulaFeatureRetorno( token, MethodList, TypeList ):
+def get_FeatureRetorno( token, MethodList, TypeList ):
     if isInListMetodo(token[1], MethodList):
         print("Erro de declaração: method %s já declarado" % token[1])
     if not isInListType(token[2], TypeList):
@@ -339,7 +328,7 @@ def manipulaFeatureRetorno( token, MethodList, TypeList ):
     MethodList.append(method)
 
 
-def manipulafeatureAnonima( token, IDsList, TypeList ):
+def get_featureAnonima( token, IDsList, TypeList ):
     if isInListId(token[1], IDsList):
         print("Erro de declaração: variavel %s já declarada" % token[1])
     if not isInListType(token[2], TypeList):
@@ -354,7 +343,7 @@ def manipulafeatureAnonima( token, IDsList, TypeList ):
     IDsList.append((token[1], token[2]))
 
 
-def manipulaFeatureDeclaration( token, IDsList, TypeList ):
+def get_FeatureDeclaration( token, IDsList, TypeList ):
     if isInListId(token[1], IDsList):
         print("Erro de declaração: variavel %s já declarada" % token[1])
     if not isInListType(token[2], TypeList):
@@ -362,7 +351,7 @@ def manipulaFeatureDeclaration( token, IDsList, TypeList ):
     IDsList.append((token[1], token[2]))
 
 
-def manipulaClasseInherits( token, TypeList ):
+def get_ClasseInherits( token, TypeList ):
     inherits = getType(token[2], TypeList)
     classe = getType(token[1], TypeList)
     if inherits == None:
@@ -372,6 +361,7 @@ def manipulaClasseInherits( token, TypeList ):
             classe[2].append(method)
         for id in inherits[3]:
             classe[3].append(id)
+
 
 def isInListType( item, lista ):
     for i in lista:
@@ -392,6 +382,8 @@ def getId( nome, lista ):
         if item[0] == nome:
             return item
     return None
+
+
 def tryParseInt( valor, IDsList ):
     try:
         valor = int(valor)
@@ -426,6 +418,7 @@ def verificaParametro( parametros, TypeList ):
             print("Erro de declaração: id %s já utilizado por outro parametro" % parametro[1])
         idsParametros.append(parametro[1])
 
+
 def verificaParametroCall( parametros, metodo, IDsList ):
     if parametros[0] == None:
         del (parametros[0])
@@ -458,6 +451,7 @@ def getType( nome, TypeList ):
             return tipo
     return None
 
+
 def isNewScopeClass(s):
     return s == 'classInherits' or s == 'class'
 
@@ -480,15 +474,15 @@ def configSelfType( IDsList, MethodsList, TypeList ):
         selftype[3].append(id)
 
 
-for son in arvore[0]:
-    if type(son) == tuple:
-        if isInListType(son[1], TypeList):
-            print("Erro de declaração: tipo %s já foi declarado" % filho[1])
-        if filho[0] == 'class':
-            TypeList.append((filho[1], None, [], []))
-        elif filho[0] == 'classInherits':
-            TypeList.append((son[1], son[2], [], []))
+for child in tree[0]:
+    if type(child) == tuple:
+        if isInListType(child[1], TypeList):
+            print("Erro de declaração: tipo %s já foi declarado" % child[1])
+        if child[0] == 'class':
+            TypeList.append((child[1], None, [], []))
+        elif child[0] == 'classInherits':
+            TypeList.append((child[1], child[2], [], []))
 
-for son in arvore[0]:
-    chamaFuncao(filho, IDsList, MethodsList, TypeList)
+for child in tree[0]:
+    chamaFuncao(child, IDsList, MethodsList, TypeList)
 

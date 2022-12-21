@@ -248,6 +248,9 @@ def p_error(p):
 
     
 parser = yacc.yacc()
+file_name = str(sys.argv[1]).split('.cl')
+source, output_file = handler(file_name)
+tree = parser.parse(source, lexer=lexer)
 
 
 if __name__ == "__main__":
@@ -255,8 +258,8 @@ if __name__ == "__main__":
     for file_in_name in range(1, len(sys.argv)):
         file_name = str(sys.argv[file_in_name]).split('.cl')
         source, output_file = handler(file_name)
-        result = parser.parse(source, lexer=lexer)
-        if result:
-            print (result)
-            output_file.write(str(result))
+        tree = parser.parse(source, lexer=lexer)
+        if tree:
+            print (tree)
+            output_file.write(str(tree))
         output_file.close()
