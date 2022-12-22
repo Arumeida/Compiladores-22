@@ -30,7 +30,7 @@ def percorretree( token ):
         print(token[0])
 
 
-def chamaFuncao( token, IDsList, MethodsList, TypeList ):
+def execute( token, IDsList, MethodsList, TypeList ):
     if token == None:
         return
 
@@ -60,19 +60,19 @@ def chamaFuncao( token, IDsList, MethodsList, TypeList ):
         get_ExprId(token, newIDsList)
     elif token[0] == 'expType':
         get_ExprLetSeta(token, newIDsList, newTypeList)
-        chamaFuncao(token[5], newIDsList, newMethodsList, newTypeList)
+        execute(token[5], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'expLet':
         get_ExprLet(token, newIDsList, newTypeList)
-        chamaFuncao(token[4], newIDsList, newMethodsList, newTypeList)
+        execute(token[4], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'expBetweenKeys':
-        chamaFuncao(token[1], newIDsList, newMethodsList, newTypeList)
+        execute(token[1], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'expWhile':
         get_ExprWhile(token, newIDsList)
-        chamaFuncao(token[3], newIDsList, newMethodsList, newTypeList)
+        execute(token[3], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'expIf':
         get_ExprIf(token, newIDsList)
-        chamaFuncao(token[2], newIDsList, newMethodsList, newTypeList)
-        chamaFuncao(token[3], newIDsList, newMethodsList, newTypeList)
+        execute(token[2], newIDsList, newMethodsList, newTypeList)
+        execute(token[3], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'exprCallMethod':
         get_ExprCallMethod(token, newMethodsList, newIDsList)
     elif token[0] == 'expATT':
@@ -93,7 +93,7 @@ def chamaFuncao( token, IDsList, MethodsList, TypeList ):
                 configSelfType(newIDsList, newMethodsList, newTypeList)
             if not isInListMethod(t[2][1], tipo[2]):
                 print("Erro de chamada: metodo %s não pertence ao tipo %s" % methodName, nome)
-        chamaFuncao(token[1], newIDsList, newMethodsList, newTypeList)
+        execute(token[1], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'expWithoutAtt':
         nome = None
         methodName = None
@@ -112,14 +112,14 @@ def chamaFuncao( token, IDsList, MethodsList, TypeList ):
                 configSelfType(newIDsList, newMethodsList, newTypeList)
             if not isInListMetodo(methodName, tipo[2]):
                 print("Erro de chamada: metodo %s não pertence ao tipo %s" % methodName, nome)
-        chamarFun(token[1], newIDsList, newMethodsList, newTypeList)
+        execute(token[1], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'exprEntreParenteses':
-        chamarFun(t[1], newIDsList, newMethodsList, newTypeList)
+        execute(t[1], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'expAtrib':
         get_ExprSeta(token, newIDsList)
-    elif token[0] == 'operator':
+    elif token[0] == 'exprOperator':
         get_Op(token, newIDsList)
-    elif token[0] == 'comparation':
+    elif token[0] == 'exprComparator':
         get_Comp(token, newIDsList)
     elif token[0] == 'expNew':
         get_ExprNew(token, newIDsList)
@@ -132,31 +132,31 @@ def chamaFuncao( token, IDsList, MethodsList, TypeList ):
     elif token[0] == 'featureReturnParametro':
         get_FeatureRetornoParametro(token, newIDsList, newMethodsList, newTypeList)
         for formal in token[4]:
-            chamarFun(formal, newIDsList, newMethodsList, newTypeList)
+            execute(formal, newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'featureReturn':
         get_FeatureRetorno(token, newMethodsList, newTypeList)
-        chamarFun(token[3], newIDsList, newMethodsList, newTypeList)
+        execute(token[3], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'featureAnonimus':
         get_featureAnonima(token, newIDsList, newTypeList)
         for formal in token[2]:
-            chamaFuncao(formal, newIDsList, newMethodsList, newTypeList)
+            execute(formal, newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'featureDeclaration':
         get_FeatureDeclaration(token, newIDsList, newTypeList)
     elif token[0] == 'class':
         for formal in token[2]:
-            chamarFun(formal, newIDsList, newMethodsList, newTypeList)
+            execute(formal, newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'classInherits':
-        get_ClasseInh(token, newTyList)
+        get_ClasseInherits(token, newTypeList)
         for formal in token[3]:
             if type(formal) == list:
                 for i in formal:
-                    chamarFun(i, newIDsList, newMethodsList, newTypeList)
+                    execute(i, newIDsList, newMethodsList, newTypeList)
             else:
-                chamaFuncao(formal, newIDsList, newMethodsList, newTypeList)
+                execute(formal, newIDsList, newMethodsList, newTypeList)
     else:
         if type(token) == list:
             for i in token:
-                chamaFuncao(i, newIDsList, newMethodsList, newTypeList)
+                execute(i, newIDsList, newMethodsList, newTypeList)
 
 
 def get_IdType( token, IDsList, TypeList ):
@@ -171,7 +171,7 @@ def get_IdType( token, IDsList, TypeList ):
 
 def get_ExprId( token, IDsList ):
     if not isInListId(token[1], IDsList):
-        print("Erro de declaração: %s não foi declarado" % token[1])
+        print(f"Erro de declaração: {token[1]} não foi declarado")
 
 
 def get_ExprLetAtrib( token, IDsList, TypeList ):
@@ -191,28 +191,28 @@ def get_ExprLet( token, IDsList, TypeList ):
 
 
 def get_ExprWhile( token, IDsList ):
-    if token[1][0] == 'comparation':
+    if token[1][0] == 'exprComparator':
         get_Comparation(token[1], IDsList)
         return
     if token[1][0] == 'expNot':
         get_ExprNot(token[1], IDsList)
         return
-    print('Erro de declaração: expressão {token[1]} não é booleano')
+    print(f'Erro de declaração: expressão {token[1]} não é booleano')
 
 
 def get_ExprIf( token, IDsList ):
-    if token[1][0] == 'comparation':
+    if token[1][0] == 'exprComparator':
         get_Comparation(token[1], IDsList)
         return
     if token[1][0] == 'expNot':
         get_ExprNottoken([1], IDsList)
         return
-    print("Erro de declaração: expressão %s não é booleano" % token[1])
+    print(f"Erro de declaração: expressão {token[1]} não é booleano")
 
 
 def get_ExprCallMethod( token, MethodsList, IDsList ):
     if not isInListMetodo(token[1], MethodsList):
-        print("Erro de chamada: metodo %s não declarado" % token[1])
+        print(f"Erro de chamada: metodo {token[1]} não declarado" % token[1])
     verificaParametroCall(token[2], getMetodo(token[1], MethodsList), IDsList)
 
 
@@ -222,13 +222,13 @@ def get_ExprBetweenParenthesis( token ):
 
 def get_ExprAtrib( token, IDsList ):
     if getId(token[1], IDsList) == None:
-        print("Erro de atribuição: %s não foi declarada" % token[1])
+        print(f"Erro de atribuição: {token[1]} não foi declarada")
     elif token[3][0] == 'operation':
         get_Operation(token[3], IDsList)
     elif token[3][0] == 'expID':
         id = getId(token[3][1], IDsList)
         if id == None:
-            print("Erro de atribuição: %s não foi declarada" % token[3][1])
+            print(f"Erro de atribuição: {token[1]} não foi declarada")
     return token[1]
 
 
@@ -239,11 +239,11 @@ def get_Operation( token, IDsList ):
     if id1 == None:
         tryParseInt(token[2][1], IDsList)
     elif id1[1] != "Int":
-        print("Erro de operação: %s deve ser do tipo Int" % id1[0])
+        print(f"Erro de operação: {id1[0]} deve ser do tipo Int")
     if id2 == None:
         tryParseInt(token[3][1], IDsList)
     elif id2[1] != "Int":
-        print("Erro de operação: %s deve ser do tipo Int" % id2[0])
+        print(f"Erro de operação: {id2[0]} deve ser do tipo Int")
 
 
 def get_Comparation( token, IDsList ):
@@ -264,46 +264,46 @@ def get_Comparation( token, IDsList ):
 
     if id1 == None:
         if type(tryConvertInt(token[2][1])) != int:
-            print("Erro de declaração: %s não foi declarado" % token[2][1])
+            print(f"Erro de declaração: {token[2][1]} não foi declarado" % token[2][1])
         id1 = (str(tryConvertInt(token[2][1])), 'Int')
     if id2 == None:
         if type(tryConvertInt(token[3][1])) != int:
-            print("Erro de declaração: %s não foi declarado" % token[3][1])
+            print(f"Erro de declaração: {token[3][1]} não foi declarado" % token[3][1])
         id2 = (str(tryConvertInt(token[3][1])), 'Int')
     if id1[1] != id2[1]:
-        print("Erro de comparação: %s %s devem ser do mesmo tipo" % id1[0], id2[0])
+        print(f"Erro de comparação: {id1[0]} {id2[0]} devem ser do mesmo tipo" % id1[0], id2[0])
 
 
 def get_ExprNew( token, TypeList ):
     if not isInListType(token[2], TypeList):
-        print("Erro de declaração: tipo %s não foi declarado" % token[2])
+        print(f"Erro de declaração: tipo {token[2]} não foi declarado")
 
 
 def get_ExprValue( token, IDsList ):
     if not isInListId(token[2], IDsList):
-        print("Erro de declaração: %s não foi declarado" % token[2])
+        print(f"Erro de declaração: {token[2]} não foi declarado")
 
 
 def get_ExprNot( token, IDsList ):
-    if token[2][0] == 'comparation':
+    if token[2][0] == 'exprComparator':
         get_Comparation(token[2], IDsList)
         return
-    print("Erro de declaração: expressão %s não é booleano" % token[2])
+    print(f"Erro de declaração: expressão {token[2]} não é booleano")
 
 
 def get_Formal( token, IDsList, TypeList ):
     if isInListId(token[1], IDsList):
-        print("Erro de declaração: %s já declarado" % token[1])
+        print(f"Erro de declaração: {token[1]} já declarado")
     if not isInListType(token[2], TypeList):
-        print("Erro de declaração: tipo %s não foi declarado" % token[2])
+        print(f"Erro de declaração: tipo {token[2]} não foi declarado")
     IDsList.append((token[1], token[2]))
 
 
 def get_FeatureRetornoParametro( token, IDsList, MethodsList, TypeList ):
     if isInListMetodo(token[1], MethodsList):
-        print("Erro de declaração: method %s já declarado" % token[1])
+        print(f"Erro de declaração: method {token[1]} já declarado")
     if not isInListType(token[3], TypeList):
-        print("Erro de declaração: tipo %s não foi declarado" % token[3])
+        print(f"Erro de declaração: tipo {token[3]} não foi declarado")
     verificaParametro(token[2], TypeList)
     method = (token[1], [], token[3])
     tipo = getType(scope, TypeList)
@@ -311,16 +311,16 @@ def get_FeatureRetornoParametro( token, IDsList, MethodsList, TypeList ):
         tipo[2].append(method)
     for id in token[2]:
         newId = (id[1], id[2])
-        IDsList.append(newId)
+        IDsList.append(newId)   
         method[1].append(newId)
     MethodsList.append(method)
 
 
 def get_FeatureRetorno( token, MethodList, TypeList ):
     if isInListMetodo(token[1], MethodList):
-        print("Erro de declaração: method %s já declarado" % token[1])
+        print(f"Erro de declaração: method {token[1]} já declarado")
     if not isInListType(token[2], TypeList):
-        print("Erro de declaração: tipo %s não foi declarado" % token[2])
+        print(f"Erro de declaração: tipo {token[2]} não foi declarado")
     method = (token[1], [], token[2])
     tipo = getType(scope, TypeList)
     if tipo != None:
@@ -330,24 +330,24 @@ def get_FeatureRetorno( token, MethodList, TypeList ):
 
 def get_featureAnonima( token, IDsList, TypeList ):
     if isInListId(token[1], IDsList):
-        print("Erro de declaração: variavel %s já declarada" % token[1])
+        print(f"Erro de declaração: variavel {token[1]} já declarada")
     if not isInListType(token[2], TypeList):
-        print("Erro de declaração: tipo %s não foi declarado" % token[2])
+        print(f"Erro de declaração: tipo {token[2]} não foi declarado")
     if token[2] == 'String':
         if type(token[3][1]) != str:
-            print("Erro de declaração: valor incompativel com a variavel %s" % token[1])
+            print(f"Erro de declaração: valor incompativel com a variavel {token[1]}")
     if token[2] == 'Int':
         if type(token[3][1]) != int:
-            print("Erro de declaração: valor incompativel com a variavel %s" % token[1])
+            print(f"Erro de declaração: valor incompativel com a variavel {token[1]}")
 
     IDsList.append((token[1], token[2]))
 
 
 def get_FeatureDeclaration( token, IDsList, TypeList ):
     if isInListId(token[1], IDsList):
-        print("Erro de declaração: variavel %s já declarada" % token[1])
+        print(f"Erro de declaração: variavel {token[1]} já declarada")
     if not isInListType(token[2], TypeList):
-        print("Erro de declaração: tipo %s não foi declarado" % token[2])
+        print(f"Erro de declaração: tipo {token[1]} não foi declarado")
     IDsList.append((token[1], token[2]))
 
 
@@ -355,7 +355,7 @@ def get_ClasseInherits( token, TypeList ):
     inherits = getType(token[2], TypeList)
     classe = getType(token[1], TypeList)
     if inherits == None:
-        print("Tipo '%s' não declarado" % token[2])
+        print(f"Tipo '{token[2]}' não declarado")
     else:
         for method in inherits[2]:
             classe[2].append(method)
@@ -413,9 +413,9 @@ def verificaParametro( parametros, TypeList ):
     idsParametros = []
     for parametro in parametros:
         if not isInListType(parametro[2], TypeList):
-            print("Erro de declaração: tipo %s não foi declarado" % parametro[2])
+            print(f"Erro de declaração: tipo {parametro[2]} não foi declarado")
         if parametro[1] in idsParametros:
-            print("Erro de declaração: id %s já utilizado por outro parametro" % parametro[1])
+            print(f"Erro de declaração: id {parametro[1]} já utilizado por outro parametro")
         idsParametros.append(parametro[1])
 
 
@@ -423,7 +423,7 @@ def verificaParametroCall( parametros, metodo, IDsList ):
     if parametros[0] == None:
         del (parametros[0])
     if len(parametros) != len(metodo[1]):
-        print("Erro de chamada: metodo %s deve conter %d parametros" % metodo[0], len(metodo[1]))
+        print(f"Erro de chamada: metodo {metodo[0]} deve conter {metodo[1]} parametros" % metodo[0], len(metodo[1]))
     for i in range(0, len(parametros)):
         if not isInListId(parametros[i][1], IDsList):
             if metodo[1][i][1] == 'Int':
@@ -435,7 +435,7 @@ def verificaParametroCall( parametros, metodo, IDsList ):
         else:
             parametro = getId(parametros[i][1], IDsList)
             if parametro[1] != metodo[1][i][1]:
-                print("Erro de chamada: parametro %s de tipo incorreto" % parametros[i][1])
+                print(f"Erro de chamada: parametro {parametros[i][1]} de tipo incorreto" % parametros[i][1])
 
 
 def getMetodo( nome, MethodList ):
@@ -477,12 +477,12 @@ def configSelfType( IDsList, MethodsList, TypeList ):
 for child in tree[0]:
     if type(child) == tuple:
         if isInListType(child[1], TypeList):
-            print("Erro de declaração: tipo %s já foi declarado" % child[1])
+            print(f"Erro de declaração: tipo {child[1]} já foi declarado")
         if child[0] == 'class':
             TypeList.append((child[1], None, [], []))
         elif child[0] == 'classInherits':
             TypeList.append((child[1], child[2], [], []))
 
 for child in tree[0]:
-    chamaFuncao(child, IDsList, MethodsList, TypeList)
+    execute(child, IDsList, MethodsList, TypeList)
 
