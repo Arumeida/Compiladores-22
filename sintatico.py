@@ -55,6 +55,8 @@ def p_feature_b(p):
         p[0] = ('featureDeclaration', p[1],p[3])
     elif len(p) == 7:
         p[0] = ('featureAnonymous', p[1], p[3], p[5])
+    elif len(p) == 9:
+        p[0] = ('featureReturn', p[1], p[3], p[5])
     else:
         p[0] = None
     pass
@@ -80,13 +82,14 @@ def p_formal(p):
 
 
 
-
-
+def p_expr_Void(p):
+    'expr : ISVOID expr'
+    p[0] = ('exprVoid', p[1], p[2])
+    pass
 
 
 def p_expr_Value(p):
-    '''expr : ISVOID expr
-     | TILDE expr
+    '''expr : TILDE expr
      | NOT expr
      | NEW ID
      | ID
@@ -95,9 +98,9 @@ def p_expr_Value(p):
      | TRUE
      | FALSE'''
     if len(p) == 2:
-        p[0] = ('expValue',p[1])
+        p[0] = ('exprValue',p[1])
     elif len(p) == 3:
-        p[0] = ('expModifier', p[1], p[2])
+        p[0] = ('exprModifier', p[1], p[2])
     pass
 
 def p_expr_comparator(p):
