@@ -129,13 +129,13 @@ def p_expr_pth(p):
     pass
 
 def p_expr_extends_att(p):
-    '''expr : expr ATT ID DOT ID OPENPTH expr_list CLOSEPTH
-     | expr DOT ID OPENPTH expr_list CLOSEPTH'''
+    '''expr : expr ATT ID DOT ID expr
+     | expr DOT ID expr'''
 
-    if len(p) == 7:
-        p[0] = ('expr', p[1],p[3],p[5])
+    if len(p) == 9:
+        p[0] = ('exprAtt', p[1],p[3],p[5])
     else:
-        p[0] = ('exprAtt',p[1], p[3], p[5], p[7])
+        p[0] = ('expr',p[1], p[3])
     pass
 
 def p_expr_id(p):
