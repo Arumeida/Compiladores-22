@@ -1,5 +1,6 @@
 from sintatico import tree
 import copy
+from gerador import *
 
 #lista de tipos (<name>, <pai>, <metodos>, <atributos>)
 TypeList = [('Object', None, [('abort', [], 'Object'), ('type_name', [], 'String'), ('copy', [], 'SELF_TYPE')], [('self', 'Object')]),
@@ -10,7 +11,7 @@ TypeList = [('Object', None, [('abort', [], 'Object'), ('type_name', [], 'String
 
 MethodsList = []
 IDsList = []
-
+bril_code = '{\"functions\" : ['
 scope = 'program'
 
 for Type in TypeList:
@@ -22,7 +23,6 @@ for Type in TypeList:
     for ID in Type[3]:
         IDsList.append(ID)
 
-
 def percorretree(token):
     if type(token) == list or type(token) == tuple:
         for child in token:
@@ -33,7 +33,7 @@ def percorretree(token):
 def execute(token, IDsList, MethodsList, TypeList):
     if token == None:
         return
-
+    global bril_code
     newTypeList = []
     newIDsList = []
     newMethodsList = []
@@ -73,6 +73,7 @@ def execute(token, IDsList, MethodsList, TypeList):
         execute(token[3], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'exprMethodFunction':
         get_exprMethodFunction(token, newMethodsList, newIDsList)
+        bril_code += put_MethodFunction(token)
     elif token[0] == 'exprAtt':
         name = None
         methodName = None
@@ -81,7 +82,7 @@ def execute(token, IDsList, MethodsList, TypeList):
             methodName = token[1][1]
         else:
             aux = getId(token[1][1], newIDsList)
-            methodName = t[2][1]
+            methodName = token[2][1]
             if aux != None:
                 name = aux[1]
 
@@ -89,17 +90,17 @@ def execute(token, IDsList, MethodsList, TypeList):
             tipo = getType(name, newTypeList)
             if name == 'SELF_TYPE':
                 configSelfType(newIDsList, newMethodsList, newTypeList)
-            if not isInListMethod(t[2][1], tipo[2]):
+            if not isInListMethod(token[2][1], tipo[2]):
                 print("Erro de chamada: metodo %s não pertence ao tipo %s" % methodName, name)
         execute(token[1], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'expr':
         name = None
         methodName = None
         if token[1][0] == 'exprMethodFunction':
-            name = getMetodo(t[1][1], newMethodsList)[2]
+            name = getMetodo(token[1][1], newMethodsList)[2]
             methodName = token[1][1]
         else:
-            aux = getId(t[1][1], newIDsList)
+            aux = getId(token[1][1], newIDsList)
             methodName = token[2][1]
             if aux != None:
                 name = aux[1]
@@ -112,13 +113,13 @@ def execute(token, IDsList, MethodsList, TypeList):
                 print(f"Erro de chamada: metodo {methodName} não pertence ao tipo {name}")
         execute(token[1], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'exprPth':
-        execute(t[1], newIDsList, newMethodsList, newTypeList)
+        execute(token[1], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'exprAttr':
         get_exprAttr(token, newIDsList)
     elif token[0] == 'exprOperator':
-        get_Op(token, newIDsList)
+        get_Operation(token, newIDsList)
     elif token[0] == 'exprComparator':
-        get_Comp(token, newIDsList)
+        get_Comparation(token, newIDsList)
     elif token[0] == 'exprNew':
         get_ExprNew(token, newIDsList)
     elif token[0] == 'exprValue':
@@ -133,11 +134,12 @@ def execute(token, IDsList, MethodsList, TypeList):
         get_Formal(token, newIDsList, newTypeList)
     elif token[0] == 'featureparameter':
         get_FeatureParameter(token, newIDsList, newMethodsList, newTypeList)
+        bril_code += put_featureReturn(token) + ' {\n'
         for formal in token[4]:
             execute(formal, newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'featureReturn':
-        
         get_FeatureReturn(token, newMethodsList, newTypeList)
+        bril_code +=put_featureReturn(token)
         execute(token[3], newIDsList, newMethodsList, newTypeList)
     elif token[0] == 'featureAnonymous':
         get_featureAnonymous(token, newIDsList, newTypeList)
@@ -215,7 +217,7 @@ def get_ExprIf(token, IDsList):
 
 def get_exprMethodFunction(token, MethodsList, IDsList):
     if not isInListMethod(token[1], MethodsList):
-        print(f"Erro de chamada: metodo {token[1]} não declarado" % token[1])
+        print(f"Erro de chamada: metodo {token[1]} não declarado")
     checkParameterCall(token[2], getMetodo(token[1], MethodsList), IDsList)
 
 
@@ -248,29 +250,29 @@ def get_Operation(token, IDsList):
 def get_Comparation(token, IDsList):
     if token[2][0] == 'exprModifier':
         id1 = getId(token[2][2][1], IDsList)
-    elif token[2][0] == 'operation':
-        get_Op(token[2], IDsList)
+    elif token[2][0] == 'exprComparator':
+        get_Operation(token[2], IDsList)
         id1 = (0, 'Int')
     else:
         id1 = getId(token[2][1], IDsList)
-    if t[3][0] == 'exprModifier':
+    if token[3][0] == 'exprModifier':
         id2 = getId(token[3][2][1], IDsList)
-    elif token[3][0] == 'opration':
-        get_Op(token[3], IDsList)
+    elif token[3][0] == 'exprComparator':
+        get_Operation(token[3], IDsList)
         id2 = (0, 'Int')
     else:
-        id2 = getId(t[3][1], IDsList)
+        id2 = getId(token[3][1], IDsList)
 
     if id1 == None:
         if type(tryConvertInt(token[2][1])) != int:
-            print(f"Erro de declaração: {token[2][1]} não foi declarado" % token[2][1])
+            print(f"Erro de declaração: {token[2][1]} não foi declarado")
         id1 = (str(tryConvertInt(token[2][1])), 'Int')
     if id2 == None:
         if type(tryConvertInt(token[3][1])) != int:
-            print(f"Erro de declaração: {token[3][1]} não foi declarado" % token[3][1])
+            print(f"Erro de declaração: {token[3][1]} não foi declarado")
         id2 = (str(tryConvertInt(token[3][1])), 'Int')
     if id1[1] != id2[1]:
-        print(f"Erro de comparação: {id1[0]} {id2[0]} devem ser do mesmo tipo" % id1[0], id2[0])
+        print(f"Erro de comparação: {id1[0]} {id2[0]} devem ser do mesmo tipo")
 
 
 def get_ExprNew(token, TypeList):
@@ -302,11 +304,11 @@ def get_Formal(token, IDsList, TypeList):
     IDsList.append((token[1], token[2]))
 
 def get_Case(token, IDsList, TypeList):
-    if len(t) == 4:
-        aux = ('featureAnonymous', t[1], t[2], t[3])
+    if len(token) == 4:
+        aux = ('featureAnonymous', token[1], token[2], token[3])
         tratarfeatureAnonimos(aux, IDs, Tipos)
-    elif len(t) == 3:
-        aux = ('featureDeclaration', t[1], t[2])
+    elif len(token) == 3:
+        aux = ('featureDeclaration', token[1], token[2])
         tratarFeatureDeclaration(aux, IDs, Tipos)
     pass
 
@@ -438,19 +440,19 @@ def checkParameterCall(parameters, metodo, IDsList):
     if parameters[0] == None:
         del (parameters[0])
     if len(parameters) != len(metodo[1]):
-        print(f"Erro de chamada: metodo {metodo[0]} deve conter {metodo[1]} parameters" % metodo[0], len(metodo[1]))
+        print(f"Erro de chamada: metodo {metodo[0]} deve conter {len(metodo[1])} parameters")
     for i in range(0, len(parameters)):
         if not isInListId(parameters[i][1], IDsList):
             if metodo[1][i][1] == 'Int':
                 tryParseInt(parameters[i][1], IDsList)
             elif metodo[1][i][1] != 'String':
                 print(f'Erro de chamada: parameter {parameters[i][1]} de tipo incorreto')
-            if parameters[i][0] != 'exprValores':
+            if parameters[i][0] != 'exprValue':
                 print(f'Erro de chamada: id {parameters[i][1]} não foi declarado')
         else:
             parameter = getId(parameters[i][1], IDsList)
             if parameter[1] != metodo[1][i][1]:
-                print(f"Erro de chamada: parameter {parameters[i][1]} de tipo incorreto" % parameters[i][1])
+                print(f"Erro de chamada: parameter {parameters[i][1]} de tipo incorreto")
 
 
 def getMetodo(name, MethodList):
@@ -472,7 +474,7 @@ def isNewScopeClass(s):
 
 
 def isNewScopeMethod(s):
-    return s == 'featureRetornoParametro' or s == 'featureRetorno'
+    return s == 'featureparameter' or s == 'featureReturn'
 
 
 def isNewScopeLet(s):
@@ -502,4 +504,8 @@ for child in tree[0]:
     print (child)
     print ('\n')
     execute(child, IDsList, MethodsList, TypeList)
-
+bril_code += ']}'
+print (bril_code)
+file = open('output.bril', 'w')
+file.write(bril_code)
+file.close()

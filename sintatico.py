@@ -2,7 +2,9 @@ import ply.yacc as yacc
 import os, sys
 from lexico import tokens, lexer
 from src.file_handler import handler
-
+tree_dict = {}
+aux_dict = {}
+aux_list = []
 VERBOSE = 1
 
 def p_program(p):
@@ -11,51 +13,50 @@ def p_program(p):
     pass
 
 def p_class_list(p):
-    '''class_list : class_list  cs COMMADOT
+    '''class_list : class_list cs COMMADOT
     | cs COMMADOT '''
 
-    if len(p) == 3:
-        p[0] = [p[1]]
-    else: 
+    if len(p) > 3:
         p[0] = p[1]
-        p[0].append(p[2])
+        p[0].append(p[2])  
+    else: 
+        p[0] = [p[1]]
     pass
 
 def p_cs(p):
-    '''cs : CLASS ID OPENKEYS feature_list CLOSEKEYS
-    | CLASS ID INHERITS ID OPENKEYS feature_list CLOSEKEYS'''
-    if len(p) == 6:
-        p[0] = ('cs', p[2], p[4])
-    else:
+    '''cs : CLASS ID INHERITS ID OPENKEYS feature_list CLOSEKEYS
+    | CLASS ID OPENKEYS feature_list CLOSEKEYS'''
+    if len(p) == 8:
         p[0] = ('classInherits', p[2], p[4], p[6])
+    else:
+        p[0] = ('cs', p[2], p[4])
     pass
 
 def p_feature_list(p):
     '''feature_list : feature_list feature COMMADOT
     | empty'''
-
-    if len(p) == 2:
-	    p[0] = None
-    else:
+    if len(p) == 4:
         p[0] = [p[1]]
         p[0].append(p[2])
+    elif len(p) == 2:
+	    p[0] = None 
     pass
 
 
 def p_feature(p):
-    '''feature : ID DOUBLEDOT ID
-    | ID OPENPTH formal_list CLOSEPTH DOUBLEDOT ID OPENKEYS expr CLOSEKEYS
+    '''feature : ID OPENPTH formal_list CLOSEPTH DOUBLEDOT ID OPENKEYS expr CLOSEKEYS
     | ID OPENPTH CLOSEPTH DOUBLEDOT ID OPENKEYS expr CLOSEKEYS
     | ID DOUBLEDOT ID ATTR expr
+    | ID DOUBLEDOT ID
     | empty'''
     if len(p) == 10:
         p[0]= ('featureparameter',p[1],p[3],p[6],p[8])
-    if len(p) == 4:
-        p[0] = ('featureDeclaration', p[1],p[3])
+    elif len(p) == 9:
+        p[0] = ('featureReturn', p[1], p[5], p[7])
     elif len(p) == 6:
         p[0] = ('featureAnonymous', p[1], p[3], p[5])
-    elif len(p) == 9:
-        p[0] = ('featureReturn', p[1], p[3], p[5])
+    elif len(p) == 4:
+        p[0] = ('featureDeclaration', p[1],p[3])
     elif len(p) == 2:
         p[0] = None
     pass
@@ -65,7 +66,7 @@ def p_formal_list(p):
     '''formal_list : formal_list COMMA formal
     | empty
     | formal'''
-    if len(p) == 4:
+    if len(p) > 3:
         p[0]=p[1]
         p[0].append(p[3])
     elif len(p) == 2:
@@ -86,23 +87,27 @@ def p_expr_Void(p):
     p[0] = ('exprVoid', p[1], p[2])
     pass
 
-def p_expr_Value(p):
-    '''expr : NEW ID
-     | NUM
-     | STRING
-     | TRUE
-     | FALSE'''
-    if len(p) == 2:
-        p[0] = ('exprValue',p[1])
-    elif len(p) == 3:
-        p[0] = ('exprModifier', p[1], p[2])
-    pass
+def p_expr_NID(p):
+    'expr : NEW ID'
+    p[0] = ('exprNew',p[1],p[2])
 
-def p_expr_Value2(p):
+def p_expr_Mod(p):
     '''expr : NOT expr
      | TILDE expr'''
-    p[0] = ('expModifier', p[1], p[2])
-    pass 
+    p[0] = ('exprModifier', p[1], p[2])
+    pass
+
+def p_expr_String(p):
+    '''expr : STRING
+     | TRUE
+     | FALSE'''
+    p[0] = ('exprValue',p[1])
+    pass
+
+def p_expr_Num(p):
+    'expr : NUM'
+    p[0] = ('exprValue', tryParseInt(p[1]))
+    pass
 
 def p_expr_comparator(p):
     '''expr : expr LESSTHEN expr
@@ -129,6 +134,11 @@ def p_expr_pth(p):
     p[0] = ('exprPth', p[2])
     pass
 
+def p_expr_id(p):
+    'expr : ID OPENPTH expr_list CLOSEPTH'
+    p[0] = ('exprMethodFunction', p[1], p[3])
+    pass
+
 def p_expr_extendsatt(p):
     '''expr : expr ATT ID DOT expr
      | expr DOT expr'''
@@ -139,14 +149,6 @@ def p_expr_extendsatt(p):
         p[0] = ('expr',p[1], p[3])
     pass
 
-def p_expr_id(p):
-    'expr : ID OPENPTH expr_list CLOSEPTH'
-    p[0] = ('exprMethodFunction', p[1], p[3])
-    pass
-
-def p_ex_id(p):
-    'expr : ID'
-    p[0] = ('exprId', p[1])
 
 
 def p_expr_if(p):
@@ -184,9 +186,10 @@ def p_exprlista(p):
      | expr COMMADOT'''
     if len(p) == 3:
         p[0] = [p[1]]
+        p[0].append(p[2])
     else:
         p[0] = p[1]
-        p[0].append(p[2])
+        
     pass
 
 def p_expr_list(p):
@@ -242,6 +245,10 @@ def p_exprcase(p):
     p[0] = ('idType', p[1], p[3], p[5])
     pass
 
+def p_ex_id(p):
+    'expr : ID'
+    p[0] = ('exprId', p[1])
+
 def p_empty(p):
     'empty :'
     pass
@@ -265,6 +272,7 @@ def tryParseInt(s):
 parser = yacc.yacc()
 file_name = str(sys.argv[1]).split('.cl')
 source, output_file = handler(file_name)
+
 tree = parser.parse(source, lexer=lexer)
 
 
@@ -285,5 +293,4 @@ if __name__ == "__main__":
             output_file.write(str(tree))
         output_file.close()
         text_tree = str(tree)
-        import pdb; pdb.set_trace()
         
