@@ -11,8 +11,8 @@ def p_program(p):
     pass
 
 def p_class_list(p):
-    '''class_list : class_list  class COMMADOT
-    | class COMMADOT '''
+    '''class_list : class_list  cs COMMADOT
+    | cs COMMADOT '''
 
     if len(p) == 3:
         p[0] = [p[1]]
@@ -21,17 +21,17 @@ def p_class_list(p):
         p[0].append(p[2])
     pass
 
-def p_class(p):
-    '''class : CLASS ID OPENKEYS feature_list CLOSEKEYS
+def p_cs(p):
+    '''cs : CLASS ID OPENKEYS feature_list CLOSEKEYS
     | CLASS ID INHERITS ID OPENKEYS feature_list CLOSEKEYS'''
     if len(p) == 6:
-        p[0] = ('class', p[2], p[4])
+        p[0] = ('cs', p[2], p[4])
     else:
         p[0] = ('classInherits', p[2], p[4], p[6])
     pass
 
 def p_feature_list(p):
-    '''feature_list : feature_list feature
+    '''feature_list : feature_list feature COMMADOT
     | empty'''
 
     if len(p) == 2:
@@ -41,23 +41,22 @@ def p_feature_list(p):
         p[0].append(p[2])
     pass
 
-def p_feature_a(p):
-    'feature : ID OPENPTH formal_list CLOSEPTH DOUBLEDOT ID OPENKEYS expr CLOSEKEYS COMMADOT'
-    p[0]= ('featureparameter',p[1],p[3],p[6],p[8])
-    pass
 
-
-def p_feature_b(p):
-    '''feature : ID DOUBLEDOT ID COMMADOT
-    | ID DOUBLEDOT ID ATTR expr COMMADOT
+def p_feature(p):
+    '''feature : ID DOUBLEDOT ID
+    | ID OPENPTH formal_list CLOSEPTH DOUBLEDOT ID OPENKEYS expr CLOSEKEYS
+    | ID OPENPTH CLOSEPTH DOUBLEDOT ID OPENKEYS expr CLOSEKEYS
+    | ID DOUBLEDOT ID ATTR expr
     | empty'''
-    if len(p) == 5:
+    if len(p) == 10:
+        p[0]= ('featureparameter',p[1],p[3],p[6],p[8])
+    if len(p) == 4:
         p[0] = ('featureDeclaration', p[1],p[3])
-    elif len(p) == 7:
+    elif len(p) == 6:
         p[0] = ('featureAnonymous', p[1], p[3], p[5])
     elif len(p) == 9:
         p[0] = ('featureReturn', p[1], p[3], p[5])
-    else:
+    elif len(p) == 2:
         p[0] = None
     pass
 
@@ -87,12 +86,8 @@ def p_expr_Void(p):
     p[0] = ('exprVoid', p[1], p[2])
     pass
 
-
 def p_expr_Value(p):
-    '''expr : TILDE expr
-     | NOT expr
-     | NEW ID
-     | ID
+    '''expr : NEW ID
      | NUM
      | STRING
      | TRUE
@@ -102,6 +97,12 @@ def p_expr_Value(p):
     elif len(p) == 3:
         p[0] = ('exprModifier', p[1], p[2])
     pass
+
+def p_expr_Value2(p):
+    '''expr : NOT expr
+     | TILDE expr'''
+    p[0] = ('expModifier', p[1], p[2])
+    pass 
 
 def p_expr_comparator(p):
     '''expr : expr LESSTHEN expr
@@ -128,9 +129,9 @@ def p_expr_pth(p):
     p[0] = ('exprPth', p[2])
     pass
 
-def p_expr_extends_att(p):
-    '''expr : expr ATT ID DOT ID expr
-     | expr DOT ID expr'''
+def p_expr_extendsatt(p):
+    '''expr : expr ATT ID DOT expr
+     | expr DOT expr'''
 
     if len(p) == 9:
         p[0] = ('exprAtt', p[1],p[3],p[5])
@@ -142,6 +143,11 @@ def p_expr_id(p):
     'expr : ID OPENPTH expr_list CLOSEPTH'
     p[0] = ('exprMethodFunction', p[1], p[3])
     pass
+
+def p_ex_id(p):
+    'expr : ID'
+    p[0] = ('exprId', p[1])
+
 
 def p_expr_if(p):
     'expr : IF expr THEN expr ELSE expr FI'
@@ -165,7 +171,7 @@ def p_expr_let(p):
     if len(p) == 8:
         p[0] = ('exprLet', p[2], p[4], p[5], p[7])
     else:
-        p[0] = ('exprLet2', p[2], p[4], p[6], p[7], p[9])
+        p[0] = ('exprLetAttr', p[2], p[4], p[6], p[7], p[9])
     pass
 
 def p_expr_case(p):
@@ -215,7 +221,7 @@ def p_letexpr(p):
     if len(p) == 5:
         p[0] = ('exprType', p[2], p[4])
     elif len(p) == 7:
-        p[0] = ('exprType2', p[2], p[4],p[6])
+        p[0] = ('exprType', p[2], p[4],p[6])
     else:
         p[0] = None
     pass
@@ -233,7 +239,7 @@ def p_exprlistcase(p):
 
 def p_exprcase(p):
     'exprcase : ID DOUBLEDOT ID CASEAT expr COMMADOT'
-    p[0] = ('exprCase', p[1], p[3], p[5])
+    p[0] = ('idType', p[1], p[3], p[5])
     pass
 
 def p_empty(p):
@@ -249,11 +255,23 @@ def p_error(p):
     else:
         raise Exception('Syntax', 'error')
 
+def tryParseInt(s):
+    try:
+        return int(s)
+    except:
+        return s
+
     
 parser = yacc.yacc()
 file_name = str(sys.argv[1]).split('.cl')
 source, output_file = handler(file_name)
 tree = parser.parse(source, lexer=lexer)
+
+
+def parse_json(tree_text):
+    if tree_text.find('[') == 0:
+        out_loop = False 
+        parse_json(tree_text[1:])
 
 
 if __name__ == "__main__":
@@ -266,3 +284,6 @@ if __name__ == "__main__":
             print (tree)
             output_file.write(str(tree))
         output_file.close()
+        text_tree = str(tree)
+        import pdb; pdb.set_trace()
+        

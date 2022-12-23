@@ -74,11 +74,8 @@ t_TILDE = r'\~'
 t_ignore = ' \t'
 
 def t_ID(token):
-    r'[a-zA-z_][a-zA-Z_0-9]*'
-    if token.value in reserved:
-        token.type = token.value.upper()
-    else:
-        token.type = 'ID'
+    r'[a-zA-Z_]+([a-zA-Z0-9_]*)'
+    token.type = reserved.get(token.value.lower(), 'ID')
     return token
 
 def t_NUM (token):
@@ -93,17 +90,15 @@ def t_STRING (token):
     r'\"[^"]*\"'
     return token
 
-def t_COMMENT_BLOCK(token):
-    r'(\(\*(.|\n)*?\*\))'
-    token.lexer.lineno += token.value.count('\n')
-
-def t_COMMENT_LINE(token):
-    r'\-\-[^-][^-]*\-\-'
+def t_COMMENT(token):
+    r'(\(\*(.|\n)*?\*\))|(--.*)'
+    pass
 
 def t_error (token):
     tk = token.value[0]
-    print (f'Caractere ilegal: ' + str(token))
+    print (f'Caractere ilegal: ' + str(tk))
     token.lexer.skip(1)
+
 
 lexer = lex.lex()
 
